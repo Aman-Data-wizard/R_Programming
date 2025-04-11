@@ -1,0 +1,86 @@
+install.packages("ggplot2")
+install.packages("dplyr")
+install.packages("readr")
+install.packages("caTools")
+install.packages("randomForest")
+install.packages("caret")
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(caTools)
+
+#loading dataset
+ds <- read.csv("C:\\Users\\HP\\Downloads\\26th_December_2023_Air_Quality_Dataset.csv")
+ds
+#Removing values with NA
+ds <- na.omit(ds)
+ds
+dim(ds)
+summary(ds)
+colnames(ds)
+#Checking for missing values
+sum(is.na(ds))
+# Calculate overall average of the 'avg' column
+overall_avg_pollution <- mean(ds$avg, na.rm = TRUE)
+print(paste("Overall average pollution level:", round(overall_avg_pollution, 2)))
+
+# Train linear regression model
+ds <- lm(AQI ~ CO + NO2 + SO2 + PM2.5 + PM10, data = training_set)
+ds
+# Predict on testing set
+ds <- predict(lm_model, newdata = testing_set)
+ds
+# Calculate RMSE
+ds <- sqrt(mean((predictions - testing_set$AQI)^2))
+ds
+
+# Calculate R-squared
+ds <- 1 - (sum((predictions - testing_set$AQI)^2) / sum((mean(training_set$AQI) - testing_set$AQI)^2))
+ds
+
+air_quality_clean <- ds
+air_quality_clean
+  mutate(
+    winter_avg = (jan + feb + dec) / 3,
+    spring_avg = (mar + apr + may) / 3,
+    summer_avg = (jun + jul + aug) / 3,
+    autumn_avg = (sep + oct + nov) / 3
+  )
+  # Distribution of average pollution levels
+ggplot(air_quality_clean, aes(x = avg)) +
+  geom_histogram(binwidth = 10, fill = "blue", color = "white") +
+  labs(title = "Distribution of Average Pollution Levels", x = "Average Pollution Level", y = "Frequency")
+
+
+# Data Visualization: PM2.5 vs AQI
+ggplot(data = ds, aes(x = `PM2.5`, y = AQI)) +
+  geom_point(alpha = 0.5, color = "darkred") +
+  geom_smooth(method = "lm", col = "blue") +
+  labs(
+    title = "PM2.5 vs AQI",
+    x = "PM2.5 Concentration",
+    y = "Air Quality Index"
+  )
+# Boxplot for seasonal averages
+air_quality_clean
+  select(winter_avg, spring_avg, summer_avg, autumn_avg)
+  pivot_longer(cols = everything(), names_to = "season", values_to = "avg_pollution") %>%
+  ggplot(aes(x = season, y = avg_pollution, fill = season)) +
+  geom_boxplot() +
+  labs(title = "Seasonal Pollution Levels", x = "Season", y = "Average Pollution Level")
+
+library(randomForest)
+
+# Using all months to predict the average
+ds<- randomForest(avg ~ jan + feb + mar + apr + may + jun + jul + aug + sep + oct + nov + dec, data = air_quality_clean)
+print(ds)
+
+library(caret)
+
+# Predictions
+ds <- predict(model, air_quality_clean)
+ds
+
+# Calculate RMSE
+ds <- RMSE(predictions, air_quality_clean$feb)
+print(ds)
